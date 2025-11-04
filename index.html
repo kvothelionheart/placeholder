@@ -7,20 +7,115 @@
         body {
             font-family: Arial, sans-serif;
             text-align: center;
-            margin-top: 100px;
+            margin: 0;
+            padding: 40px 10px;
             background-color: #1a1a1a;
             color: #f3c623;
         }
         h1 {
-            font-size: 48px;
+            font-size: 42px;
+            margin-bottom: 10px;
+        }
+        h2 {
+            font-size: 28px;
+            margin-top: 30px;
         }
         p {
-            font-size: 20px;
+            font-size: 18px;
+        }
+        .card-container {
+            margin-top: 30px;
+            display: flex;
+            justify-content: center;
+        }
+        .card {
+            background: #222;
+            border-radius: 12px;
+            padding: 20px;
+            max-width: 320px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.6);
+        }
+        img {
+            max-width: 100%;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+        .badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 999px;
+            background: #333;
+            font-size: 12px;
+            margin: 2px;
         }
     </style>
+    <!-- Supabase JS from CDN -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 </head>
 <body>
     <h1>Welcome to The SOL Ring Shop</h1>
-    <p>Your Magic the Gathering singles store on Solana</p>
+    <p>Your Magic: The Gathering singles store on Solana</p>
+
+    <h2>Featured Test Card</h2>
+    <div id="status">Loading card from Supabase…</div>
+
+    <div class="card-container">
+        <div class="card" id="card-root" style="display:none;"></div>
+    </div>
+
+    <script>
+        const { createClient } = supabase;
+
+        // TODO: ✂️ REPLACE THESE WITH YOUR REAL VALUES FROM SUPABASE
+        const SUPABASE_URL = "https://dfaclzlcjfdqmisclpjt.supabase.co";
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRmYWNsemxjamZkcW1pc2NscGp0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjIyODQ3ODQsImV4cCI6MjA3Nzg2MDc4NH0.-datU_sdTRS-SBQdbGAgkbP2NFm7RwM7XlDf1gPptK4";
+
+        const client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        async function loadCards() {
+            const statusEl = document.getElementById('status');
+            const cardRoot = document.getElementById('card-root');
+
+            try {
+                const { data, error } = await client
+                    .from('cards')
+                    .select('*')
+                    .limit(1); // just grab first card for now
+
+                if (error) {
+                    console.error(error);
+                    statusEl.textContent = "Error loading cards: " + error.message;
+                    return;
+                }
+
+                if (!data || data.length === 0) {
+                    statusEl.textContent = "No cards found in Supabase yet.";
+                    return;
+                }
+
+                const card = data[0];
+
+                statusEl.textContent = "Loaded from Supabase ✅";
+
+                cardRoot.innerHTML = `
+                    ${card.image_url ? `<img src="${card.image_url}" alt="${card.card_name}">` : ''}
+                    <h3>${card.card_name}</h3>
+                    <p>${card.supertype ? card.supertype + ' ' : ''}${card.primary_type || ''}${card.subtype ? ' — ' + card.subtype : ''}</p>
+                    <p>Set: ${card.set || card.set_code || 'N/A'}</p>
+                    <p>Rarity: ${card.rarity || 'N/A'}</p>
+                    <p>Condition: ${card.condition || 'N/A'}</p>
+                    <p>Quantity: ${card.quantity ?? 0}</p>
+                    <p>Foil: ${card.foil ? 'Yes' : 'No'}</p>
+                `;
+
+                cardRoot.style.display = 'block';
+            } catch (e) {
+                console.error(e);
+                statusEl.textContent = "Unexpected error loading cards.";
+            }
+        }
+
+        loadCards();
+    </script>
 </body>
 </html>
