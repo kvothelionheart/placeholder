@@ -59,63 +59,67 @@
     <h2>Featured Test Card</h2>
     <div id="status">Loading card from Supabase…</div>
 
-    <div class="card-container">
-        <div class="card" id="card-root" style="display:none;"></div>
+    <div class="card-container" id="cards-root">
+    <!-- Cards will be injected here -->
     </div>
 
+
     <script>
-        const { createClient } = supabase;
+    const { createClient } = supabase;
 
-        // TODO: ✂️ REPLACE THESE WITH YOUR REAL VALUES FROM SUPABASE
-        const SUPABASE_URL = "https://dfaclzlcjfdqmisclpjt.supabase.co";
-        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRmYWNsemxjamZkcW1pc2NscGp0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjIyODQ3ODQsImV4cCI6MjA3Nzg2MDc4NH0.-datU_sdTRS-SBQdbGAgkbP2NFm7RwM7XlDf1gPptK4";
+    const SUPABASE_URL = "https://dfaclzlcjfdqmisclpjt.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRmYWNsemxjamZkcW1pc2NscGp0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjIyODQ3ODQsImV4cCI6MjA3Nzg2MDc4NH0.-datU_sdTRS-SBQdbGAgkbP2NFm7RwM7XlDf1gPptK4";
 
-        const client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        async function loadCards() {
-            const statusEl = document.getElementById('status');
-            const cardRoot = document.getElementById('card-root');
+    async function loadCards() {
+        const statusEl = document.getElementById('status');
+        const cardsRoot = document.getElementById('cards-root');
 
-            try {
-                const { data, error } = await client
-                    .from('cards')
-                    .select('*')
-                    .limit(1); // just grab first card for now
+        try {
+            const { data, error } = await client
+                .from('cards')
+                .select('*')
+                .order('card_name', { ascending: true });
 
-                if (error) {
-                    console.error(error);
-                    statusEl.textContent = "Error loading cards: " + error.message;
-                    return;
-                }
+            if (error) {
+                console.error(error);
+                statusEl.textContent = "Error loading cards: " + error.message;
+                return;
+            }
 
-                if (!data || data.length === 0) {
-                    statusEl.textContent = "No cards found in Supabase yet.";
-                    return;
-                }
+            if (!data || data.length === 0) {
+                statusEl.textContent = "No cards found in Supabase yet.";
+                return;
+            }
 
-                const card = data[0];
+            statusEl.textContent = "Loaded from Supabase ✅";
 
-                statusEl.textContent = "Loaded from Supabase ✅";
+            // Clear existing content
+            cardsRoot.innerHTML = "";
 
-                cardRoot.innerHTML = `
+            data.forEach(card => {
+                const div = document.createElement('div');
+                div.className = 'card';
+                div.innerHTML = `
                     ${card.image_url ? `<img src="${card.image_url}" alt="${card.card_name}">` : ''}
                     <h3>${card.card_name}</h3>
-                    <p>${card.supertype ? card.supertype + ' ' : ''}${card.primary_type || ''}${card.subtype ? ' — ' + card.subtype : ''}</p>
                     <p>Set: ${card.set || card.set_code || 'N/A'}</p>
                     <p>Rarity: ${card.rarity || 'N/A'}</p>
                     <p>Condition: ${card.condition || 'N/A'}</p>
                     <p>Quantity: ${card.quantity ?? 0}</p>
                     <p>Foil: ${card.foil ? 'Yes' : 'No'}</p>
                 `;
-
-                cardRoot.style.display = 'block';
-            } catch (e) {
-                console.error(e);
-                statusEl.textContent = "Unexpected error loading cards.";
-            }
+                cardsRoot.appendChild(div);
+            });
+        } catch (e) {
+            console.error(e);
+            statusEl.textContent = "Unexpected error loading cards.";
         }
+    }
 
-        loadCards();
-    </script>
+    loadCards();
+</script>
+
 </body>
 </html>
